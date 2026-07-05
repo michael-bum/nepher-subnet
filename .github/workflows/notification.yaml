@@ -25,7 +25,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
       - name: Add upstream
         run: |
-          git remote add upstream https://github.com/gradients-ai/G.O.D.git
+          git remote add upstream https://github.com/nepher-ai/nepher-subnet.git
       - name: Fetch upstream
         run: |
           git fetch upstream
@@ -35,4 +35,4 @@ jobs:
           git merge upstream/main --no-edit
       - name: Push changes to fork
         run: |
-          git push https://x-access-token:${{ secrets.SYNC_PAT }}@github.com/michael-bum/G.O.D.git main
+          git push https://x-access-token:${{ secrets.SYNC_PAT }}@github.com/michael-bum/nepher-subnet.git main
