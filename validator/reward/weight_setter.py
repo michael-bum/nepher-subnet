@@ -27,7 +27,7 @@ from nepher_core.wallet.utils import (
 )
 from nepher_core.utils.logging import get_logger
 from validator.state import TournamentPeriod, get_current_period
-from validator.reward.distribution import compute_weight_distribution
+from validator.reward.distribution import compute_weight_distribution, RewardRecipient
 
 logger = get_logger(__name__)
 
@@ -228,10 +228,10 @@ class WeightSetter:
                 f"UID {leader_uid} (leader)"
             )
 
-        # Resolve the remainder recipient: prefer a reward tournament with an
-        # approved winner. Confirmed no-winner tournaments may legally share a
+        # Resolve the remainder recipients: prefer a reward tournament with an
+        # approved podium. Confirmed no-winner tournaments may legally share a
         # reward window with another tournament and must not steal the remainder.
-        winner_uid: Optional[int] = None
+        reward_recipients: Optional[List[RewardRecipient]] = None
         if reward_tournaments:
             if len(reward_tournaments) > 1:
                 ids = ", ".join(str(t.id) for t in reward_tournaments)
@@ -245,20 +245,19 @@ class WeightSetter:
 
             chosen = None
             for candidate in reward_tournaments:
-                resolved = await self._get_winner_uid(candidate.id, metagraph)
-                # ``_get_winner_uid`` returns BURN_UID when there is no approved
-                # winner; skip those and keep looking for a real winner.
-                if resolved != self.BURN_UID:
+                recipients = await self._get_reward_recipients(candidate.id, metagraph)
+                if recipients:
                     chosen = candidate
-                    winner_uid = resolved
+                    reward_recipients = recipients
+                    desc = ", ".join(
+                        f"UID {uid}@{share:.1%}" for uid, share in recipients
+                    )
                     logger.info(
-                        f"[{chosen.id}] reward winner UID "
-                        f"{resolved} receives the remainder"
+                        f"[{chosen.id}] reward podium receives the remainder: {desc}"
                     )
                     break
 
             if chosen is None:
-                # All overlapping reward tournaments burn (e.g. only no-winner).
                 logger.info(
                     "No approved reward winner among overlapping reward "
                     "tournaments — remainder burns on UID 0"
@@ -266,58 +265,81 @@ class WeightSetter:
 
         return compute_weight_distribution(
             leader_uids,
-            reward_winner_uid=winner_uid,
+            reward_recipients=reward_recipients,
             burn_uid=self.BURN_UID,
             leader_fraction=self.LEADER_WEIGHT_FRACTION,
         )
+
+    async def _get_reward_recipients(
+        self,
+        tournament_id: str,
+        metagraph: bt.Metagraph,
+    ) -> List[RewardRecipient]:
+        """Resolve podium places to ``(uid, share)`` pairs.
+
+        Places whose hotkey is missing from the metagraph are skipped; their
+        share burns with the unallocated remainder. Returns an empty list when
+        no approved winner can be resolved (caller burns the remainder).
+        """
+        logger.info("Querying winners from tournament API...")
+
+        try:
+            winner_info = await self.api.get_winner_hotkey(tournament_id)
+
+            if not winner_info.winner_approved:
+                logger.info("No winner approved - will burn remainder on UID 0")
+                return []
+
+            podium = list(winner_info.winners or [])
+            if not podium and winner_info.winner_hotkey:
+                from nepher_core.api.models import PodiumWinnerInfo
+
+                podium = [
+                    PodiumWinnerInfo(
+                        place=1,
+                        hotkey=winner_info.winner_hotkey,
+                        agent_id=winner_info.winner_agent_id,
+                        score=winner_info.winner_score,
+                        reward_share=1.0,
+                    )
+                ]
+
+            recipients: List[RewardRecipient] = []
+            for place in sorted(podium, key=lambda p: p.place):
+                if not place.hotkey or place.reward_share <= 0:
+                    continue
+                uid = find_uid_for_hotkey(metagraph, place.hotkey)
+                if uid is None:
+                    logger.warning(
+                        f"Place {place.place} hotkey not in metagraph — "
+                        f"share {place.reward_share:.1%} burns"
+                    )
+                    continue
+                logger.info(
+                    f"Place {place.place} -> UID {uid} "
+                    f"(share {place.reward_share:.1%})"
+                )
+                recipients.append((uid, float(place.reward_share)))
+
+            if not recipients:
+                logger.info("No podium UIDs resolved — will burn remainder on UID 0")
+            return recipients
+
+        except Exception as e:
+            logger.error(f"Failed to get winners: {e}")
+            logger.info("Falling back to burn on UID 0")
+            return []
 
     async def _get_winner_uid(
         self,
         tournament_id: str,
         metagraph: bt.Metagraph,
     ) -> int:
-        """
-        Get winner UID from tournament API.
-        
-        Returns BURN_UID if:
-        - No winner approved
-        - Winner hotkey not found in metagraph
-        
-        Args:
-            tournament_id: Tournament ID
-            metagraph: Current metagraph
-            
-        Returns:
-            UID to set weight to
-        """
-        logger.info("Querying winner from tournament API...")
-        
-        try:
-            winner_info = await self.api.get_winner_hotkey(tournament_id)
-            
-            if not winner_info.winner_approved or not winner_info.winner_hotkey:
-                logger.info("No winner approved - will burn on UID 0")
-                return self.BURN_UID
-            
-            winner_hotkey = winner_info.winner_hotkey
-            logger.info(f"Winner hotkey: {winner_hotkey[:16]}...")
-            
-            # Find UID for winner hotkey
-            winner_uid = find_uid_for_hotkey(metagraph, winner_hotkey)
-            
-            if winner_uid is None:
-                logger.warning(
-                    f"Winner hotkey not found in metagraph - will burn on UID 0"
-                )
-                return self.BURN_UID
-            
-            logger.info(f"Winner UID: {winner_uid}")
-            return winner_uid
-            
-        except Exception as e:
-            logger.error(f"Failed to get winner: {e}")
-            logger.info("Falling back to burn on UID 0")
+        """Legacy helper: return the first podium UID, or BURN_UID."""
+        recipients = await self._get_reward_recipients(tournament_id, metagraph)
+        if not recipients:
             return self.BURN_UID
+        return recipients[0][0]
 
     async def _set_weights(
         self,
