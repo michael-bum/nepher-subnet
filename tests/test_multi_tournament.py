@@ -177,6 +177,40 @@ class TestWeightDistribution:
     def test_leader_fraction_constant(self):
         assert LEADER_WEIGHT_FRACTION == pytest.approx(0.01)
 
+    def test_podium_7_2_1_split(self):
+        dist = compute_weight_distribution(
+            [10],
+            reward_recipients=[(20, 0.7), (21, 0.2), (22, 0.1)],
+        )
+        assert dist[10] == pytest.approx(0.01)
+        remainder = 0.99
+        assert dist[20] == pytest.approx(remainder * 0.7)
+        assert dist[21] == pytest.approx(remainder * 0.2)
+        assert dist[22] == pytest.approx(remainder * 0.1)
+        assert sum(dist.values()) == pytest.approx(1.0)
+
+    def test_podium_short_two_places_normalized(self):
+        # Shares already normalized for 2 places (7:2 → 7/9, 2/9)
+        dist = compute_weight_distribution(
+            [],
+            reward_recipients=[(20, 7 / 9), (21, 2 / 9)],
+        )
+        assert dist[20] == pytest.approx(7 / 9)
+        assert dist[21] == pytest.approx(2 / 9)
+        assert sum(dist.values()) == pytest.approx(1.0)
+
+    def test_podium_duplicate_uid_merges(self):
+        dist = compute_weight_distribution(
+            [],
+            reward_recipients=[(20, 0.7), (20, 0.3)],
+        )
+        assert dist[20] == pytest.approx(1.0)
+
+    def test_empty_recipients_burns(self):
+        dist = compute_weight_distribution([10], reward_recipients=[])
+        assert dist[10] == pytest.approx(0.01)
+        assert dist[DEFAULT_BURN_UID] == pytest.approx(0.99)
+
 
 # ---------------------------------------------------------------------------
 # State manager

@@ -7,6 +7,7 @@ from nepher_core.api.models import (
     Evaluation,
     EvaluationToken,
     WinnerInfo,
+    PodiumWinnerInfo,
     AgentListResponse,
     WeightCommitInfo,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "Evaluation",
     "EvaluationToken",
     "WinnerInfo",
+    "PodiumWinnerInfo",
     "AgentListResponse",
     "WeightCommitInfo",
     "APIError",
