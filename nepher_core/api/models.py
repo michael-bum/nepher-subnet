@@ -100,14 +100,33 @@ class Evaluation(BaseModel):
         extra = "ignore"
 
 
+class PodiumWinnerInfo(BaseModel):
+    """One podium place returned by the tournament reward API."""
+
+    place: int = 1
+    hotkey: Optional[str] = None
+    agent_id: Optional[str] = None
+    score: Optional[float] = None
+    reward_share: float = 0.0
+
+    class Config:
+        extra = "ignore"
+
+
 class WinnerInfo(BaseModel):
-    """Winner information for reward."""
+    """Winner information for reward.
+
+    Singular fields are place-1 mirrors; ``winners`` carries the full podium
+    with normalized ``reward_share`` fractions of the remainder weight.
+    """
 
     winner_approved: bool = False
     winner_hotkey: Optional[str] = None
     winner_agent_id: Optional[str] = None
     winner_score: Optional[float] = None
-    
+    reward_split_ratios: Optional[List[int]] = None
+    winners: List[PodiumWinnerInfo] = Field(default_factory=list)
+
     class Config:
         extra = "ignore"
 
