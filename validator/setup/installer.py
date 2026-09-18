@@ -144,7 +144,7 @@ async def download_environments(
         from nepher.storage.bundle import BundleManager
         
         cache_manager = get_cache_manager(cache_dir=cache_path, category=category)
-        client = get_client(api_url="https://envhub-api.nepher.ai", api_key=api_key)
+        client = get_client(api_url="https://api.nepher.ai/envhub", api_key=api_key)
         
         for env_id in env_ids:
             logger.info(f"Checking environment: {env_id}")

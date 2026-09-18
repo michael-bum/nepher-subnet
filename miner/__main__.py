@@ -182,7 +182,7 @@ def _resolve_credentials(args: argparse.Namespace):
         return cli_val or config_val or (os.environ.get(env_key) if env_key else None) or default
 
     api_key = resolve(args.api_key, config.api_key if config else None, "NEPHER_API_KEY")
-    api_url = resolve(args.api_url, config.api_url if config else None, default="https://tournament-api.nepher.ai")
+    api_url = resolve(args.api_url, config.api_url if config else None, default="https://api.nepher.ai/tournament")
     wallet_name = resolve(
         getattr(args, "wallet_name", None), config.wallet.name if config else None, default="miner"
     )

@@ -97,7 +97,7 @@ Edit **`.env`** (Docker Compose reads these — the wallet directory defaults to
 NEPHER_API_KEY=nepher_your_actual_api_key_here
 # Optional overrides (sensible defaults ship in docker-compose.yaml):
 # BITTENSOR_WALLET_PATH=~/.bittensor
-# NEPHER_API_URL=https://tournament-api.nepher.ai
+# NEPHER_API_URL=https://api.nepher.ai/tournament
 ```
 
 Edit **`config/validator_config.yaml`** (read by the validator process — keep it in sync with `.env`):

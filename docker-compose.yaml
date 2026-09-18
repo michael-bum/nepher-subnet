@@ -37,7 +37,7 @@ services:
       - ${AGENT_PATH:-.}/agent:/app/agent:ro
     environment:
       - NEPHER_API_KEY=${NEPHER_API_KEY}
-      - NEPHER_API_URL=${NEPHER_API_URL:-https://tournament-api.nepher.ai}
+      - NEPHER_API_URL=${NEPHER_API_URL:-https://api.nepher.ai/tournament}
     networks:
       - nepher-net
     profiles:
@@ -92,8 +92,8 @@ services:
       - ./logs:/app/logs
     environment:
       - NEPHER_API_KEY=${NEPHER_API_KEY}
-      - NEPHER_API_URL=${NEPHER_API_URL:-https://tournament-api.nepher.ai}
-      - ENVHUB_API_URL=${ENVHUB_API_URL:-https://envhub-api.nepher.ai}
+      - NEPHER_API_URL=${NEPHER_API_URL:-https://api.nepher.ai/tournament}
+      - ENVHUB_API_URL=${ENVHUB_API_URL:-https://api.nepher.ai/envhub}
       - EVAL_REPO_URL=${EVAL_REPO_URL:-https://github.com/nepher-ai/eval-nav.git}
       - NEPHER_CACHE_DIR=/root/.cache/nepher
       # Sandbox image name (must match the image built above)
@@ -135,7 +135,7 @@ services:
       - ./logs:/app/logs
     environment:
       - NEPHER_API_KEY=${NEPHER_API_KEY}
-      - NEPHER_API_URL=${NEPHER_API_URL:-https://tournament-api.nepher.ai}
+      - NEPHER_API_URL=${NEPHER_API_URL:-https://api.nepher.ai/tournament}
     networks:
       - nepher-net
     restart: unless-stopped
