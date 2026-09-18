@@ -10,7 +10,7 @@ subnet:
 
 # Tournament API endpoint
 tournament:
-  api_url: "https://tournament-api.nepher.ai"
+  api_url: "https://api.nepher.ai/tournament"
 #  api_url: "http://localhost:8003"
   
 # Isaac Lab/Sim version requirements

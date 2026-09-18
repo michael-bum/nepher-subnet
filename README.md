@@ -88,8 +88,8 @@ nepher-validator run --config config/validator_config.yaml [--verbose] [--json-l
 
 | Service | URL | Role |
 |---|---|---|
-| Tournament API | https://tournament-api.nepher.ai | Tournaments, agents, scores, winners |
-| EnvHub | https://envhub-api.nepher.ai | Benchmark environment downloads |
+| Tournament API | https://api.nepher.ai/tournament | Tournaments, agents, scores, winners |
+| EnvHub | https://api.nepher.ai/envhub | Benchmark environment downloads |
 | eval-nav | github.com/nepher-ai/eval-nav | Evaluation harness (baked into sandbox image) |
 
 ## Links
